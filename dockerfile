@@ -4,7 +4,7 @@
 # Base: r-base (official R Docker image)
 # Purpose: Forecast electrical load for PJM power grid (29 zones, 10 days)
 # Model: Optimized seasonal weights with temporal decay (R² = 0.97)
-# Platform: linux/amd64 (specify in build command: docker build --platform linux/amd64)
+# Platform: linux/amd64 (required by project specifications)
 # ==============================================================================
 
 FROM r-base:4.3.1

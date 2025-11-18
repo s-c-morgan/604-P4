@@ -11,14 +11,20 @@ all: data/optimized_models.rds
 	@echo "  make predictions"
 	@echo ""
 
-# Delete intermediate outputs
+# Delete everything except code and raw data
 clean:
-	@echo "Cleaning intermediate outputs..."
-	@rm -f data/forecast_*.csv
-	@rm -f data/predictions_*_detail.csv
-	@rm -f data/predictions_10day.csv
-	@rm -f data/peak_days.csv
-	@echo "Cleaned intermediate files"
+	@echo "========================================================================"
+	@echo "Cleaning all generated files (keeping code and rawdata/)..."
+	@echo "========================================================================"
+	@echo ""
+	@echo "Deleting:"
+	@echo "  - data/ directory (all processed data and models)"
+	@echo "  - predictions.csv"
+	@echo ""
+	@rm -rf data/
+	@rm -f predictions.csv
+	@echo "✓ Cleaned - only code and rawdata/ remain"
+	@echo ""
 
 # Clean predictions.csv file (use with caution!)
 clean_predictions:
@@ -26,31 +32,27 @@ clean_predictions:
 	@rm -f predictions.csv
 	@echo "predictions.csv cleaned"
 
-# Raw data handling - downloads and processes raw data from scratch
+# Raw data handling - downloads raw data only (no merging)
 rawdata:
 	@echo "========================================================================"
-	@echo "Downloading and Processing Raw Data"
+	@echo "Downloading Raw Data"
 	@echo "========================================================================"
 	@echo ""
 	@echo "This will:"
 	@echo "  1. Delete existing rawdata/ directory"
 	@echo "  2. Download NOAA ISD weather data (2016-2025)"
 	@echo "  3. Download PJM load data from OSF"
-	@echo "  4. Merge into data/load_with_weather.csv"
 	@echo ""
 	@rm -rf rawdata/
 	@mkdir -p rawdata/weather rawdata/load
-	@echo "Step 1/3: Downloading NOAA weather data..."
+	@echo "Step 1/2: Downloading NOAA weather data..."
 	@./download_noaa_weather.sh
 	@echo ""
-	@echo "Step 2/3: Downloading PJM load data..."
+	@echo "Step 2/2: Downloading PJM load data..."
 	@./download_pjm_load.sh
 	@echo ""
-	@echo "Step 3/3: Merging raw data..."
-	@Rscript merge_raw_data.R
-	@echo ""
 	@echo "========================================================================"
-	@echo "✓ Raw data downloaded and processed"
+	@echo "✓ Raw data downloaded"
 	@echo "========================================================================"
 	@echo ""
 
@@ -68,6 +70,14 @@ predictions: data/optimized_models.rds data/peak_days.csv
 # Ensure peak days are calculated before first prediction
 data/peak_days.csv: data/optimized_models.rds
 	@$(MAKE) --no-print-directory peak_days
+
+# Merge raw data into processed format
+data/load_with_weather.csv:
+	@echo "========================================================================"
+	@echo "Merging raw weather and load data..."
+	@echo "========================================================================"
+	@Rscript merge_raw_data.R
+	@echo "✓ Data merged and saved"
 
 # Train models with optimized seasonal weights
 data/optimized_models.rds: data/load_with_weather.csv

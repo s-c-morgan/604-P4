@@ -24,6 +24,16 @@ models <- readRDS(models_file)
 zones <- names(models)
 cat(sprintf("Loaded %d optimized models\n", length(models)), file = stderr())
 
+# CRITICAL: Require exactly 29 zones
+REQUIRED_ZONES <- 29
+if (length(zones) != REQUIRED_ZONES) {
+  cat(sprintf("\n\nERROR: Expected %d zones but only have %d models!\n",
+              REQUIRED_ZONES, length(zones)), file = stderr())
+  cat("  Cannot make predictions - need all 29 zones.\n", file = stderr())
+  cat("  Run fit_optimized_models.R to train missing models.\n\n", file = stderr())
+  stop(sprintf("Incomplete models: %d/%d zones", length(zones), REQUIRED_ZONES))
+}
+
 # Load 10-day temperature forecast
 forecast_file <- "data/forecast_10day.csv"
 if (!file.exists(forecast_file)) {
@@ -34,9 +44,9 @@ if (!file.exists(forecast_file)) {
 temp_forecast <- read_csv(forecast_file, show_col_types = FALSE)
 cat(sprintf("Loaded %d temperature forecasts\n", nrow(temp_forecast)), file = stderr())
 
-# Parse datetime once
+# Parse datetime once and ensure EST timezone
 temp_forecast <- temp_forecast %>%
-  mutate(datetime = ymd_hms(datetime))
+  mutate(datetime = force_tz(ymd_hms(datetime), "America/New_York"))
 
 # Determine prediction dates
 prediction_dates <- unique(as.Date(temp_forecast$datetime))
@@ -88,8 +98,7 @@ prediction_data <- prediction_data %>%
   mutate(
     day_of_week = wday(datetime, label = FALSE),
     hour_raw = hour(datetime),
-    # Training data doesn't have hour 0, so map 0 -> 23
-    hour = ifelse(hour_raw == 0, 23, hour_raw),
+    hour = hour_raw,  # Use actual hour (0-23)
     thanksgiving_week = sapply(datetime, is_thanksgiving_week)
   )
 

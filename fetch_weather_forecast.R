@@ -84,6 +84,8 @@ get_nws_forecast <- function(lat, lon, zone_name) {
 
     for (i in 1:nrow(periods)) {
       start_time <- ymd_hms(periods$startTime[i])
+      # Ensure timezone is EST
+      start_time <- with_tz(start_time, "America/New_York")
       temp_f <- periods$temperature[i]
 
       # NWS API returns temperature in F by default

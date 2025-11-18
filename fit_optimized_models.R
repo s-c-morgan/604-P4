@@ -85,7 +85,9 @@ is_thanksgiving_week <- function(date) {
 
 data <- data %>%
   mutate(
-    datetime = ymd_hms(datetime, quiet = TRUE),
+    # read_csv parses datetime as UTC by default - relabel as EST without conversion
+    # (the CSV already contains EST times, but they get labeled as UTC)
+    datetime = force_tz(datetime, "America/New_York"),
     day_of_week = wday(datetime, label = FALSE),
     hour = hour(datetime),
     month = month(datetime),

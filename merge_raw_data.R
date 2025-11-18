@@ -43,16 +43,14 @@ for (file in load_files) {
 
 cat(sprintf("  Total load records: %d\n\n", nrow(load_data)))
 
-# Standardize column names (assuming datetime and MW columns exist)
-# Adjust these based on actual PJM data format
-if ("datetime_beginning_ept" %in% names(load_data)) {
-  load_data <- load_data %>%
-    rename(datetime = datetime_beginning_ept)
-}
-
-# Ensure datetime is parsed
+# Standardize column names for PJM data
+# Keep times in Eastern Time (EST/EDT), do not convert to UTC
 load_data <- load_data %>%
-  mutate(datetime = ymd_hms(datetime, tz = "America/New_York"))
+  mutate(
+    datetime = force_tz(mdy_hms(datetime_beginning_ept), "America/New_York"),
+    mw = as.numeric(mw)
+  ) %>%
+  select(load_area, datetime, mw)
 
 # ==============================================================================
 # STEP 2: Process NOAA ISD weather data
@@ -109,20 +107,23 @@ for (file in weather_files) {
   basename_file <- basename(file)
   usaf_wban <- sub("-\\d{4}\\.csv$", "", basename_file)  # Remove -YYYY.csv
 
-  # Find matching station
+  # Find ALL load areas that use this station (may be multiple)
   station_match <- stations %>%
     filter(usaf_wban == !!usaf_wban)
 
   if (nrow(station_match) == 0) next
 
-  load_area <- station_match$load_area[1]
-
-  # Parse weather data
+  # Parse weather data once
   weather <- parse_noaa_isd(file)
 
   if (!is.null(weather) && nrow(weather) > 0) {
-    weather$load_area <- load_area
-    weather_data <- bind_rows(weather_data, weather)
+    # Create weather records for EACH load area that uses this station
+    for (i in 1:nrow(station_match)) {
+      load_area <- station_match$load_area[i]
+      weather_copy <- weather
+      weather_copy$load_area <- load_area
+      weather_data <- bind_rows(weather_data, weather_copy)
+    }
 
     if (pb_count %% 10 == 0) {
       cat(sprintf("  Processed %d/%d files...\n", pb_count, pb_total))
@@ -139,11 +140,15 @@ cat(sprintf("  Total weather records: %d\n\n", nrow(weather_data)))
 cat("Step 3: Merging load and weather data...\n")
 
 # Round datetime to hour for matching
+# Keep everything in Eastern Time
 load_data <- load_data %>%
   mutate(datetime = floor_date(datetime, "hour"))
 
 weather_data <- weather_data %>%
-  mutate(datetime = floor_date(datetime, "hour")) %>%
+  mutate(
+    datetime = with_tz(datetime, "America/New_York"),
+    datetime = floor_date(datetime, "hour")
+  ) %>%
   group_by(load_area, datetime) %>%
   summarise(temp_f = mean(temp_f, na.rm = TRUE), .groups = "drop")
 
@@ -166,7 +171,9 @@ cat("\nStep 4: Saving merged data...\n")
 dir.create("data", showWarnings = FALSE)
 
 # Select and order columns
+# Format datetime as string in EST without timezone suffix
 output_data <- merged_data %>%
+  mutate(datetime = format(datetime, "%Y-%m-%d %H:%M:%S")) %>%
   select(load_area, datetime, mw, temp_f) %>%
   arrange(load_area, datetime)
 

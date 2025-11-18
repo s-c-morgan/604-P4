@@ -156,7 +156,8 @@ duplicate_last_available_day <- function(zone_name, existing_forecasts, target_d
     duplicated_forecast <- last_day_pattern %>%
       mutate(
         load_zone = zone_name,
-        datetime = format(ymd_hms(paste(missing_date, sprintf("%02d:00:00", hour))),
+        datetime = format(force_tz(ymd_hms(paste(missing_date, sprintf("%02d:00:00", hour))),
+                                   "America/New_York"),
                          "%Y-%m-%d %H:%M:%S")
       ) %>%
       select(load_zone, datetime, temp_f)
@@ -234,7 +235,8 @@ complete_forecast <- expand.grid(
   hour = 0:23,
   stringsAsFactors = FALSE
 ) %>%
-  mutate(datetime = format(ymd_hms(paste(date, sprintf("%02d:00:00", hour))),
+  mutate(datetime = format(force_tz(ymd_hms(paste(date, sprintf("%02d:00:00", hour))),
+                                    "America/New_York"),
                            "%Y-%m-%d %H:%M:%S")) %>%
   select(-date)
 

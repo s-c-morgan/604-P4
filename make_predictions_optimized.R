@@ -115,8 +115,7 @@ prediction_data <- prediction_data %>%
   mutate(
     day_of_week = wday(datetime, label = FALSE),
     hour_raw = hour(datetime),
-    # Training data doesn't have hour 0 (hours 1-23), so map 0 -> 23
-    hour = ifelse(hour_raw == 0, 23, hour_raw),
+    hour = hour_raw,  # Use actual hour (0-23)
     thanksgiving_week = sapply(datetime, is_thanksgiving_week)
   )
 
@@ -125,7 +124,7 @@ prediction_data <- prediction_data %>%
   left_join(
     suppressWarnings(
       temp_forecast %>%
-        mutate(datetime = ymd_hms(datetime)) %>%
+        mutate(datetime = force_tz(ymd_hms(datetime), "America/New_York")) %>%
         rename(load_area = load_zone) %>%
         select(load_area, datetime, temp_f)
     ),
@@ -220,6 +219,17 @@ if (file.exists(peak_days_file)) {
 # ==============================================================================
 
 cat("\nFormatting output...\n", file = stderr())
+
+# CRITICAL: Require exactly 29 zones
+REQUIRED_ZONES <- 29
+if (length(zones) != REQUIRED_ZONES) {
+  cat(sprintf("\n\nERROR: Expected %d zones but only have %d models!\n",
+              REQUIRED_ZONES, length(zones)), file = stderr())
+  cat("Missing zones:\n", file = stderr())
+  cat("  Cannot output predictions - need all 29 zones.\n", file = stderr())
+  cat("  Run fit_optimized_models.R to train missing models.\n\n", file = stderr())
+  stop(sprintf("Incomplete models: %d/%d zones", length(zones), REQUIRED_ZONES))
+}
 
 # Ensure zones are in consistent order
 zones_ordered <- sort(zones)

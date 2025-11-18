@@ -20,6 +20,12 @@ clean:
 	@rm -f data/peak_days.csv
 	@echo "Cleaned intermediate files"
 
+# Clean predictions.csv file (use with caution!)
+clean_predictions:
+	@echo "WARNING: This will delete all predictions in predictions.csv"
+	@rm -f predictions.csv
+	@echo "predictions.csv cleaned"
+
 # Raw data handling - downloads and processes raw data from scratch
 rawdata:
 	@echo "========================================================================"

@@ -1,132 +1,158 @@
 # PJM Load Forecasting
 
-Forecasting electrical load for the PJM power grid using optimized seasonal weights and temporal decay.
+> **IMPORTANT DISCLAIMER**: This project was developed using **Claude Code** (Anthropic's AI-powered coding assistant). Claude Code was extensively used for:
+> - Writing and debugging all R scripts and shell scripts as well as creating assisting documentation (code comments)
+> - Navigating NOAA and PJM data APIs
+> - Implementing the forecasting model architecture
+> - Setting up the Docker containerization
+> - Optimizing the Makefile workflow
+> - Troubleshooting data merging and model training issues
 
-## Model Performance
-
-- **R² = 0.97** (97% variance explained)
-- **RMSE = 188.84 MW**
-- Linear regression with lag-1 load and temperature features
+---
 
 ## Quick Start
 
-### Build Docker Image
+### 1. Pull Docker Image
 
 ```bash
-# Build for linux/amd64 platform (required by project specifications)
-docker build --platform linux/amd64 -t scmorgan777/604-p4:latest .
-
-# Alternative: Use buildx for cross-platform builds
-docker buildx build --platform linux/amd64 -t scmorgan777/604-p4:latest .
+docker pull scmorgan/pjm-load-forecast:latest
 ```
 
-### Interactive Bash Terminal
-
-To explore and reproduce the analysis:
+### 2. Make Predictions
 
 ```bash
-# Start interactive bash session
-docker run -it --rm scmorgan777/604-p4:latest
+# Output predictions to screen
+docker run --rm scmorgan/pjm-load-forecast:latest make predictions
 
-# Then run commands interactively:
-# make          # Verify/train models
-# make clean    # Clean intermediate files
-# make rawdata  # View raw data info
-# make predictions  # Make predictions
+# Append to predictions.csv file
+docker run --rm scmorgan/pjm-load-forecast:latest make predictions >> predictions.csv
 ```
 
-### Run Analysis
+### 3. Interactive Exploration
 
 ```bash
-# Train models (if needed - models are pre-trained in Docker)
-docker run --rm scmorgan777/604-p4:latest make
+# Start bash session to explore the model
+docker run -it --rm scmorgan/pjm-load-forecast:latest
 
-# Make predictions
-docker run --rm scmorgan777/604-p4:latest make predictions
+# Inside the container, try:
+make              # Verify models are ready
+make predictions  # Make a prediction
+ls -lh data/      # View data files
 ```
 
-### Daily Workflow
+---
+
+## Available Commands
+
+All required make targets as specified in project requirements:
 
 ```bash
-# Append predictions to CSV file
-docker run --rm scmorgan777/604-p4:latest make predictions >> predictions.csv
+make              # Verify/train models (if needed)
+make predictions  # Make current predictions and output to screen
+make clean        # Delete intermediate files (keeps code and rawdata/)
+make rawdata      # Re-download raw data from NOAA and OSF
+```
 
-# Then commit to git
+---
+
+## Daily Prediction Workflow
+
+**Prediction Schedule**: November 19-28, 2025 (making predictions for Nov 20-29)
+
+Each day at noon:
+
+```bash
+# Run prediction and append to CSV
+docker run --rm scmorgan/pjm-load-forecast:latest make predictions >> predictions.csv
+
+# Commit to git
 git add predictions.csv
 git commit -m "Add predictions for $(date +%Y-%m-%d)"
 git push
 ```
 
-## File Structure
+**Output format**:
+```
+"YYYY-MM-DD", L1_00, L1_01, ..., L29_23, PH_1, ..., PH_29, PD_1, ..., PD_29
+```
+- Date: Current date (when prediction was made)
+- 696 hourly load predictions (29 zones × 24 hours)
+- 29 peak hour predictions (00-23 format)
+- 29 peak day predictions (0 or 1)
 
-### Core Prediction Scripts
-- `fit_optimized_models.R` - Train models with calibrated seasonal weights
-- `make_predictions_optimized.R` - Generate daily predictions
-- `fetch_weather_forecast.R` - Get weather forecast data
-- `fetch_10day_forecast.R` - Fetch 10-day weather forecast for peak analysis
-- `predict_10day_loads.R` - Predict loads for 10-day period
-- `identify_peak_days.R` - Identify peak days from 10-day predictions
+---
 
-### Data Files
-- `weather_station_mapping_final.csv` - Maps PJM zones to weather stations
-- `data/load_with_weather.csv` - Preprocessed historical data (91MB)
-- `data/optimized_models.rds` - Trained models (370MB)
+## Building from Source
 
-### Raw Data Scripts (for `make rawdata`)
-- `download_noaa_weather.sh` - Download NOAA ISD weather data (2016-2025)
-- `download_pjm_load.sh` - Download PJM load data from OSF
-- `merge_raw_data.R` - Merge raw weather and load data
-
-### Build Files
-- `Makefile` - Build automation
-- `dockerfile` - Docker image configuration
-
-## Make Targets
-
-All required make targets as specified in project requirements:
+If you want to rebuild the Docker image:
 
 ```bash
-make              # Default: verify/train models (runs all analyses except downloading raw data and predictions)
-make clean        # Delete intermediate files (forecasts, predictions), keeps code and models
-make predictions  # Make current predictions and output to screen
-make rawdata      # Download raw data from NOAA and OSF, then merge (WARNING: large download)
-make peak_days    # Manually recalculate peak days from 10-day forecast (optional)
+# Clone repository
+git clone https://github.com/scmorgan/604-P4.git
+cd 604-P4
+
+# Build for linux/amd64 platform (required)
+docker build --platform linux/amd64 -t scmorgan/pjm-load-forecast:latest .
+
+# Push to Docker Hub (optional)
+docker push scmorgan/pjm-load-forecast:latest
 ```
 
-## Prediction Workflow
+---
 
-**Prediction Period**: November 20-29, 2025 (10 days)
+## Model Performance
 
-**First prediction** (Nov 19 → predicting Nov 20):
-```bash
-make predictions
-# 1. Fetches 10-day weather forecast (Nov 20-29, 2025)
-# 2. Predicts loads for all 10 days
-# 3. Identifies 2 peak days for each zone (FIXED for entire period)
-# 4. Makes prediction for Nov 20 with peak day flags
-```
+- **R² = 0.97** (97% variance explained)
+- **RMSE = 188.84 MW**
+- **Model**: Linear regression with optimized seasonal weights and temporal decay
+- **Features**: Temperature, day of week, hour, lag-1 load, Thanksgiving week indicator
 
-**Subsequent predictions** (Nov 20-28 → predicting Nov 21-29):
-```bash
-make predictions
-# 1. Reuses peak day analysis from first run (Nov 20-29)
-# 2. Fetches updated weather for tomorrow
-# 3. Makes prediction with correct peak day flags
-```
-
-**Note**: Peak days are determined once based on the 10-day forecast (Nov 20-29) and remain fixed throughout the prediction period.
-
-## Requirements
-
-- Docker with linux/amd64 platform support
-- 4GB RAM (8GB recommended for training)
-- Internet connection for weather data
-
-## Model Details
-
-The model uses:
-- **Temporal decay**: Half-life = 0.45 years
-- **Seasonal weights**: Optimized for November predictions
-- **Features**: Temperature, day of week, hour, lag-1 load
+**Temporal decay**: Half-life = 0.45 years
+**Seasonal weights**: Optimized for November predictions via 3-round cross-validation
 
 Peak predictive months: March, April, October, November (full weight)
+
+---
+
+## System Requirements
+
+- Docker with linux/amd64 platform support
+- 4GB RAM (for `make predictions`)
+- Internet connection (for fetching weather forecasts)
+
+---
+
+## Troubleshooting
+
+**Models not found**: Pre-trained models are included in the Docker image. If missing, run:
+```bash
+docker run --rm scmorgan/pjm-load-forecast:latest make
+```
+
+**Weather forecast fails**: Requires internet connection to fetch from NOAA API. Check network connectivity.
+
+**Wrong platform error**: Make sure to build with `--platform linux/amd64` flag.
+
+---
+
+## Project Structure
+
+```
+604-P4/
+├── Makefile                              # Build automation
+├── dockerfile                            # Docker configuration
+├── weather_station_mapping_final.csv     # Zone-to-station mappings
+├── fit_optimized_models.R                # Model training
+├── make_predictions_optimized.R          # Daily predictions
+├── fetch_weather_forecast.R              # Weather API integration
+├── fetch_10day_forecast.R                # 10-day weather forecast
+├── predict_10day_loads.R                 # 10-day load predictions
+├── identify_peak_days.R                  # Peak day identification
+├── download_noaa_weather.sh              # NOAA data download
+├── download_pjm_load.sh                  # PJM data download
+├── merge_raw_data.R                      # Data preprocessing
+└── data/
+    ├── load_with_weather.csv             # Preprocessed data (91MB)
+    └── optimized_models.rds              # Trained models (451MB)
+```
+

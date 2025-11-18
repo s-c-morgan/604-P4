@@ -1,0 +1,30 @@
+load_area,station_icao,usaf_wban,station_name,city,state
+AECO,KACY,724070-93730,Atlantic City International Airport,Atlantic City,NJ
+AEPAPT,KCRW,724140-93729,Yeager Airport,Charleston,WV
+AEPIMP,KFWA,725330-14827,Fort Wayne International Airport,Fort Wayne,IN
+AEPKPT,KHTS,724250-03860,Tri-State/M.J.Fergus Airport,Huntington,WV
+AEPOPT,KCMH,724280-93815,Port Columbus International Airport,Columbus,OH
+AP,KMGW,724176-13736,Morgantown Municipal Airport,Morgantown,WV
+BC,KBWI,724060-93721,Baltimore-Washington International Airport,Baltimore,MD
+CE,KORD,725300-94846,Chicago O'Hare International Airport,Chicago,IL
+DAY,KDAY,724290-93815,James M Cox Dayton International Airport,Dayton,OH
+DEOK,KCVG,724210-93814,Cincinnati/Northern Kentucky International Airport,Cincinnati,OH
+DOM,KRIC,724010-13740,Richmond International Airport,Richmond,VA
+DPLCO,KSBY,723980-93720,Salisbury-Ocean City Wicomico Regional Airport,Salisbury,MD
+DUQ,KPIT,725200-94823,Pittsburgh International Airport,Pittsburgh,PA
+EASTON,KESN,724043-03756,Easton/Newnam Field Airport,Easton,MD
+EKPC,KLEX,724220-93820,Blue Grass Airport,Lexington,KY
+JC,KTTN,724095-14792,Trenton Mercer Airport,Trenton,NJ
+ME,KABE,725170-14737,Lehigh Valley International Airport,Allentown,PA
+OE,KCLE,725240-14820,Cleveland Hopkins International Airport,Cleveland,OH
+OVEC,KPKB,724273-03804,Parkersburg/Mid-Ohio Valley Regional Airport,Parkersburg,WV
+PAPWR,KYNG,725250-14852,Youngstown-Warren Regional Airport,Youngstown,OH
+PE,KERI,725260-14860,Erie International Airport,Erie,PA
+PEPCO,KDCA,724050-13743,Ronald Reagan Washington National Airport,Washington,DC
+PLCO,KYNG,725250-14852,Youngstown-Warren Regional Airport,New Castle,PA
+PN,KUNV,725128-54739,University Park Airport,State College,PA
+PS,KEWR,725020-14734,Newark Liberty International Airport,Newark,NJ
+RECO,KTEB,725025-94741,Teterboro Airport,Teterboro,NJ
+SMECO,KNHK,724040-13721,Naval Air Station Patuxent River,Patuxent River,MD
+UGI,KABE,725170-14737,Lehigh Valley International Airport,Allentown,PA
+VMEU,KDAN,724106-13728,Danville Regional Airport,Danville,VA

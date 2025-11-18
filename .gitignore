@@ -1,0 +1,25 @@
+# Personal notes and project instructions (not for public repo)
+claude.md
+CLAUDE.md
+
+# Data files
+data/*.csv
+data/weather/
+
+# Raw data (downloaded from external sources)
+rawdata/
+
+# R intermediate files
+*.rds
+.Rhistory
+.RData
+.Rproj.user
+
+# Mac OS
+.DS_Store
+
+# Plots
+plots/
+
+# Temporary files
+*.tmp

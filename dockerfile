@@ -3,7 +3,6 @@
 # ==============================================================================
 # Base: r-base (official R Docker image)
 # Purpose: Forecast electrical load for PJM power grid (29 zones, 10 days)
-# Model: Optimized seasonal weights with temporal decay (R² = 0.97)
 # Platform: linux/amd64 (required by project specifications)
 # ==============================================================================
 
@@ -73,7 +72,7 @@ COPY Makefile                              ./
 COPY weather_station_mapping_final.csv     ./
 
 # ==============================================================================
-# Preprocessed Data (529 MB - includes pre-trained models)
+# Preprocessed Data
 # ==============================================================================
 
 COPY data/load_with_weather.csv     ./data/
